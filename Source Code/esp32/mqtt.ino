@@ -15,14 +15,14 @@ DHT dht(DHTPIN, DHTTYPE);
 #define FAN    23
 
 // ======= WiFi =======
-const char* ssid = "968";
-const char* password = "88881989";
+const char* ssid = "Nha 10B ngo 204";
+const char* password = "11223344";
 
 // ======= HiveMQ Cloud TLS =======
 const char* mqtt_server = "530052fe99b94418a3414955fddef258.s1.eu.hivemq.cloud";
 const int mqtt_port = 8883; // TLS Websocket
 const char* mqtt_user = "smartHome";
-const char* mqtt_pass = "Dung@123456";
+const char* mqtt_pass = "Hieu@123456";
 const char* topic_pub = "smartHome/data";
 
 // ======= MQTT Client =======
