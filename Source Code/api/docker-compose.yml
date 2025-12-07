@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  iot-fastapi:
+    build: .
+    container_name: iot_fastapi
+    ports:
+      - "8086:8086"
+    environment:
+      ADAFRUIT_AIO_USERNAME: ${ADAFRUIT_AIO_USERNAME}
+      ADAFRUIT_AIO_KEY: ${ADAFRUIT_AIO_KEY}
+      ADAFRUIT_AIO_FEED: light
+      HIVEMQ_HOST: ${HIVEMQ_HOST}
+      HIVEMQ_PORT: 8883
+      HIVEMQ_USER: ${HIVEMQ_USER}
+      HIVEMQ_PASS: ${HIVEMQ_PASS}
+      HIVEMQ_CMD_TOPIC: smartHome/cmd
+      HIVEMQ_TLS_INSECURE: 1
+      API_PORT: 8086
+      POLLING_INTERVAL: 3
+    restart: unless-stopped
+    networks:
+      - iot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8086/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  iot-network:
+    driver: bridge
