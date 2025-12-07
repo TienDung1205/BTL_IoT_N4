@@ -1,3 +1,15 @@
+<?php
+// admin.php
+session_start();
+// kiểm tra đã đăng nhập và role admin
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    // redirect về login
+    header('Location: login.php?error=' . urlencode('Vui lòng đăng nhập với tài khoản admin.'));
+    exit;
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -19,7 +31,11 @@
 
 	<!-- Custom styles for this template-->
 	<link href="css/sb-admin-2.min.css" rel="stylesheet">
-	<script src="https://unpkg.com/paho-mqtt@1.1.0/paho-mqtt-min.js"></script>
+	<!-- <script src="https://unpkg.com/paho-mqtt@1.1.0/paho-mqtt-min.js"></script> -->
+	 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script> -->
+
+	<!-- <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script> -->
+
 </head>
 
 <body id="page-top">
@@ -31,7 +47,7 @@
 		<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
 			<!-- Sidebar - Brand -->
-			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
 				<div class="sidebar-brand-icon rotate-n-15">
 					<i class="fas fa-laugh-wink"></i>
 				</div>
@@ -43,7 +59,7 @@
 
 			<!-- Nav Item - Dashboard -->
 			<li class="nav-item active">
-				<a class="nav-link" href="index.html">
+				<a class="nav-link" href="#">
 					<i class="fas fa-fw fa-tachometer-alt"></i>
 					<span>Dashboard</span></a>
 			</li>
@@ -66,8 +82,8 @@
 				<div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
 					<div class="bg-white py-2 collapse-inner rounded">
 						<h6 class="collapse-header">Custom Components:</h6>
-						<a class="collapse-item" href="buttons.html">Buttons</a>
-						<a class="collapse-item" href="cards.html">Cards</a>
+						<a class="collapse-item" href="#">Buttons</a>
+						<a class="collapse-item" href="#">Cards</a>
 					</div>
 				</div>
 			</li>
@@ -83,10 +99,10 @@
 					data-parent="#accordionSidebar">
 					<div class="bg-white py-2 collapse-inner rounded">
 						<h6 class="collapse-header">Custom Utilities:</h6>
-						<a class="collapse-item" href="utilities-color.html">Colors</a>
-						<a class="collapse-item" href="utilities-border.html">Borders</a>
-						<a class="collapse-item" href="utilities-animation.html">Animations</a>
-						<a class="collapse-item" href="utilities-other.html">Other</a>
+						<a class="collapse-item" href="#">Colors</a>
+						<a class="collapse-item" href="#">Borders</a>
+						<a class="collapse-item" href="#">Animations</a>
+						<a class="collapse-item" href="#">Other</a>
 					</div>
 				</div>
 			</li>
@@ -115,21 +131,21 @@
 						<div class="collapse-divider"></div>
 						<h6 class="collapse-header">Other Pages:</h6>
 						<a class="collapse-item" href="404.html">404 Page</a>
-						<a class="collapse-item" href="blank.html">Blank Page</a>
+						<a class="collapse-item" href="#">Blank Page</a>
 					</div>
 				</div>
 			</li>
 
 			<!-- Nav Item - Charts -->
 			<li class="nav-item">
-				<a class="nav-link" href="charts.html">
+				<a class="nav-link" href="#">
 					<i class="fas fa-fw fa-chart-area"></i>
 					<span>Charts</span></a>
 			</li>
 
 			<!-- Nav Item - Tables -->
 			<li class="nav-item">
-				<a class="nav-link" href="tables.html">
+				<a class="nav-link" href="#">
 					<i class="fas fa-fw fa-table"></i>
 					<span>Tables</span></a>
 			</li>
@@ -302,14 +318,7 @@
 	<!-- <script src="js/demo/chart-area-demo.js"></script>
 	<script src="js/demo/chart-pie-demo.js"></script> -->
 	<!-- MQTT scripts -->
-	<!-- <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script> -->
-	<!-- <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script> -->
-	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/mqttws31.min.js"></script> -->
-
-	<!-- <script src="js/mqttws31.min.js"></script> -->
-	 <!-- <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script> -->
-<!-- <script src="https://unpkg.com/paho-mqtt@1.1.0/paho-mqtt-min.js"></script> -->
-
+	<script src="js/mqttws31.min.js"></script>
 	<script>
 		console.log("Paho:", Paho);
 
@@ -361,6 +370,7 @@
 		};
 	</script>
 
+	<script src="js/esp32.js"></script>
 
 
 </body>
