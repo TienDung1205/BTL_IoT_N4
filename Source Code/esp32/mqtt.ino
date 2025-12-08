@@ -133,6 +133,78 @@ String getLightStatus()
   return light1_status + "|" + light2_status;
 }
 
+// ======= Get Light Control from Adafruit =======
+void getFromAdafruit()
+{
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.println("WiFi not connected");
+    return;
+  }
+
+  HTTPClient http;
+  adafruitClient.setInsecure();
+
+  String url = String(adafruit_url);
+  url += "?X-AIO-Key=" + String(adafruit_key);
+
+  http.begin(adafruitClient, url);
+
+  int httpCode = http.GET();
+
+  if (httpCode > 0)
+  {
+    Serial.print("HTTP GET Response code: ");
+    Serial.println(httpCode);
+
+    if (httpCode == HTTP_CODE_OK)
+    {
+      String response = http.getString();
+      Serial.print("Response from Adafruit: ");
+      Serial.println(response);
+
+      // Parse JSON response to get the latest value
+      // Response format: [{"value":"ON|ON","created_at":"..."}]
+      int valueStart = response.indexOf("\"value\":\"");
+      if (valueStart != -1)
+      {
+        valueStart += 9; // length of "\"value\":\""
+        int valueEnd = response.indexOf("\"", valueStart);
+        String lightValue = response.substring(valueStart, valueEnd);
+
+        Serial.print("Light value from Adafruit: ");
+        Serial.println(lightValue);
+
+        // Parse light1 and light2 status (format: "ON|ON" or "OFF|OFF", etc)
+        int pipeIndex = lightValue.indexOf("|");
+        if (pipeIndex != -1)
+        {
+          String light1_cmd = lightValue.substring(0, pipeIndex);
+          String light2_cmd = lightValue.substring(pipeIndex + 1);
+
+          Serial.print("Light1: ");
+          Serial.print(light1_cmd);
+          Serial.print(" | Light2: ");
+          Serial.println(light2_cmd);
+
+          // Control both lights
+          digitalWrite(LIGHT1, light1_cmd == "ON" ? HIGH : LOW);
+          digitalWrite(LIGHT2, light2_cmd == "ON" ? HIGH : LOW);
+
+          Serial.println("Lights updated from Adafruit");
+        }
+      }
+    }
+  }
+  else
+  {
+    Serial.print("HTTP GET Error: ");
+    Serial.println(http.errorToString(httpCode));
+  }
+
+  http.end();
+}
+
 // ======= Reconnect MQTT =======
 void reconnect()
 {
@@ -222,5 +294,13 @@ void loop()
     adafruit_last = millis();
     String lightStatus = getLightStatus();
     sendToAdafruit(lightStatus);
+  }
+
+  // Get light control from Adafruit every 3 seconds
+  static unsigned long adafruit_get_last = 0;
+  if (millis() - adafruit_get_last > 3000)
+  {
+    adafruit_get_last = millis();
+    getFromAdafruit();
   }
 }
