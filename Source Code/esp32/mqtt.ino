@@ -2,6 +2,7 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include "DHT.h"
+#include <HTTPClient.h>
 
 // ======= Cấu hình DHT22 =======
 #define DHTPIN 15
@@ -12,32 +13,41 @@ DHT dht(DHTPIN, DHTTYPE);
 #define LIGHT_SENSOR_DO 25
 #define LIGHT1 2
 #define LIGHT2 4
-#define FAN    23
+#define FAN 23
 
 // ======= WiFi =======
-const char* ssid = "Nha 10B ngo 204";
-const char* password = "11223344";
+const char *ssid = "Nha 10B ngo 204";
+const char *password = "11223344";
 
 // ======= HiveMQ Cloud TLS =======
-const char* mqtt_server = "530052fe99b94418a3414955fddef258.s1.eu.hivemq.cloud";
+const char *mqtt_server = "530052fe99b94418a3414955fddef258.s1.eu.hivemq.cloud";
 const int mqtt_port = 8883; // TLS Websocket
-const char* mqtt_user = "smartHome";
-const char* mqtt_pass = "Hieu@123456";
-const char* topic_pub = "smartHome/data";
+const char *mqtt_user = "smartHome";
+const char *mqtt_pass = "Hieu@123456";
+const char *topic_pub = "smartHome/data";
+
+// ======= Adafruit IO Configuration =======
+const char *adafruit_username = "dugnam18";
+const char *adafruit_key = "abc";
+const char *adafruit_feed = "light";
+const char *adafruit_url = "https://io.adafruit.com/api/v2/dugnam18/feeds/light/data";
+WiFiClientSecure adafruitClient;
 
 // ======= MQTT Client =======
 WiFiClientSecure secureClient;
 PubSubClient mqttClient(secureClient);
 
 // ======= Time =======
-const char* ntpServer = "pool.ntp.org";
+const char *ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 7 * 3600;
 const int daylightOffset_sec = 0;
 
-void initTime() {
+void initTime()
+{
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   time_t now = time(nullptr);
-  while (now < 8 * 3600 * 2) {
+  while (now < 8 * 3600 * 2)
+  {
     delay(500);
     Serial.print(".");
     now = time(nullptr);
@@ -46,31 +56,96 @@ void initTime() {
 }
 
 // ======= Callback =======
-void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char *topic, byte *payload, unsigned int length)
+{
   Serial.print("Received on topic: ");
   Serial.println(topic);
 
   String msg;
-  for (int i = 0; i < length; i++) msg += (char)payload[i];
+  for (int i = 0; i < length; i++)
+    msg += (char)payload[i];
   Serial.println("Message: " + msg);
 
   // Điều khiển thiết bị
-  if (msg.indexOf("light1") != -1) {
+  if (msg.indexOf("light1") != -1)
+  {
     digitalWrite(LIGHT1, msg.indexOf("ON") != -1 ? HIGH : LOW);
   }
-  if (msg.indexOf("fan") != -1) {
+  if (msg.indexOf("light2") != -1)
+  {
+    digitalWrite(LIGHT2, msg.indexOf("ON") != -1 ? HIGH : LOW);
+  }
+  if (msg.indexOf("fan") != -1)
+  {
     digitalWrite(FAN, msg.indexOf("ON") != -1 ? HIGH : LOW);
   }
 }
 
+// ======= Adafruit API Call =======
+void sendToAdafruit(String lightValue)
+{
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.println("WiFi not connected");
+    return;
+  }
+
+  HTTPClient http;
+  adafruitClient.setInsecure();
+
+  String url = String(adafruit_url);
+  url += "?X-AIO-Key=" + String(adafruit_key);
+
+  http.begin(adafruitClient, url);
+  http.addHeader("Content-Type", "application/json");
+
+  // Create JSON payload
+  String payload = "{\"value\":\"" + lightValue + "\"}";
+
+  Serial.print("Sending to Adafruit: ");
+  Serial.println(payload);
+
+  int httpCode = http.POST(payload);
+
+  if (httpCode > 0)
+  {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpCode);
+    if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_CREATED)
+    {
+      Serial.println("Successfully sent to Adafruit IO");
+    }
+  }
+  else
+  {
+    Serial.print("HTTP Error: ");
+    Serial.println(http.errorToString(httpCode));
+  }
+
+  http.end();
+}
+
+// ======= Get Light Status =======
+String getLightStatus()
+{
+  String light1_status = digitalRead(LIGHT1) ? "ON" : "OFF";
+  String light2_status = digitalRead(LIGHT2) ? "ON" : "OFF";
+  return light1_status + "|" + light2_status;
+}
+
 // ======= Reconnect MQTT =======
-void reconnect() {
-  while (!mqttClient.connected()) {
+void reconnect()
+{
+  while (!mqttClient.connected())
+  {
     Serial.print("Connecting MQTT... ");
-    if (mqttClient.connect("ESP32Client", mqtt_user, mqtt_pass)) {
+    if (mqttClient.connect("ESP32Client", mqtt_user, mqtt_pass))
+    {
       Serial.println("connected!");
       mqttClient.subscribe("smartHome/cmd");
-    } else {
+    }
+    else
+    {
       Serial.print("Failed, rc=");
       Serial.print(mqttClient.state());
       Serial.println(" - retry in 2s");
@@ -79,12 +154,14 @@ void reconnect() {
   }
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   WiFi.begin(ssid, password);
   Serial.print("Connecting WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
@@ -105,18 +182,24 @@ void setup() {
   reconnect();
 }
 
-void loop() {
-  if (!mqttClient.connected()) reconnect();
+void loop()
+{
+  if (!mqttClient.connected())
+    reconnect();
   mqttClient.loop();
 
   static unsigned long last = 0;
-  if (millis() - last > 5000) {
+  static unsigned long adafruit_last = 0;
+
+  if (millis() - last > 5000)
+  {
     last = millis();
 
     float temp = dht.readTemperature();
     float hum = dht.readHumidity();
 
-    if (isnan(temp) || isnan(hum)) {
+    if (isnan(temp) || isnan(hum))
+    {
       Serial.println("DHT fail!");
       return;
     }
@@ -131,5 +214,13 @@ void loop() {
 
     mqttClient.publish(topic_pub, payload.c_str());
     Serial.println("Published: " + payload);
+  }
+
+  // Send light status to Adafruit every 2 seconds
+  if (millis() - adafruit_last > 2000)
+  {
+    adafruit_last = millis();
+    String lightStatus = getLightStatus();
+    sendToAdafruit(lightStatus);
   }
 }
