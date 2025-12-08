@@ -5,7 +5,15 @@ function toggleDevice(deviceId) {
 
     if (client && client.isConnected()) {
         client.send(message);
-        console.log("Đã gửi lệnh TOGGLE cho " + deviceId);
+         Swal.fire({
+            toast: true,
+            position: 'top-start', // góc trái trên
+            icon: 'success',
+            title: `Đã gửi lệnh BẬT/TẮT tới ${deviceId}`,
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+        });
     } else {
         console.log("MQTT chưa kết nối!");
     }

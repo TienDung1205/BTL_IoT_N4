@@ -3,10 +3,12 @@
 session_start();
 // kiểm tra đã đăng nhập và role admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    // redirect về login
-    header('Location: login.php?error=' . urlencode('Vui lòng đăng nhập với tài khoản admin.'));
-    exit;
+	// redirect về login
+	header('Location: login.php?error=' . urlencode('Vui lòng đăng nhập với tài khoản admin.'));
+	exit;
 }
+
+
 ?>
 
 
@@ -32,7 +34,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 	<!-- Custom styles for this template-->
 	<link href="css/sb-admin-2.min.css" rel="stylesheet">
 	<!-- <script src="https://unpkg.com/paho-mqtt@1.1.0/paho-mqtt-min.js"></script> -->
-	 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script> -->
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script> -->
 
 	<!-- <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script> -->
 
@@ -300,6 +302,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 			</div>
 		</div>
 	</div>
+	<!-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> -->
+
+
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
 	<!-- Bootstrap core JavaScript-->
 	<script src="vendor/jquery/jquery.min.js"></script>
@@ -333,45 +339,50 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 			userName: "smartHome",
 			password: "Hieu@123456",
 			onSuccess: onConnect,
-			onFailure: (err) => console.log("❌ Connect failed", err)
+			onFailure: (err) => console.log(" Connect failed", err)
 		};
 
 		client.connect(options);
 
 		function onConnect() {
-			console.log("✔ Connected");
+			console.log(" Connected");
 			client.subscribe("smartHome/data");
 		}
 
 		client.onConnectionLost = function (e) {
-			console.log("⚠ Connection lost:", e.errorMessage);
+			console.log(" Connection lost:", e.errorMessage);
 			setTimeout(() => client.connect(options), 2000);
 		};
 
 		client.onMessageArrived = function (msg) {
-			console.log("📩", msg.payloadString);
+			console.log("...", msg.payloadString);
 
 			let data;
-			try { data = JSON.parse(msg.payloadString); }
+			try {
+				data = JSON.parse(msg.payloadString);
+				fetch('updateDevice.php', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(data)
+				})
+					.then(res => res.json())
+					.then(res => {
+						if (res.success) {
+							loadDevicesFromDB();
+						}
+					});
+
+
+
+			}
 			catch (e) { return console.error("JSON error:", e); }
 
-			if (data.light1) document.getElementById("light1-status").textContent = data.light1;
-			if (data.light2) document.getElementById("light2-status").textContent = data.light2;
-			if (data.fan) document.getElementById("fan-status").textContent = data.fan;
 
-			if (data.temp) document.getElementById("temp-value").textContent = data.temp;
-			if (data.hum) document.getElementById("hum-value").textContent = data.hum;
-
-			if (data.lux) document.getElementById("lm393-status").textContent = data.lux;
-
-			// thời gian update
-			document.getElementById("dht-last").textContent = new Date().toLocaleTimeString();
-			document.getElementById("lm393-last").textContent = new Date().toLocaleTimeString();
 		};
 	</script>
 
 	<script src="js/esp32.js"></script>
-
+	<script src="js/main.js"></script>
 
 </body>
 
